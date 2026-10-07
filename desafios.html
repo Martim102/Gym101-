@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gym101% — Desafios</title>
+<link rel="stylesheet" href="../css/estilo.css">
+</head>
+<body>
+
+<nav class="barra-nav">
+    <div class="container">
+        <div class="marca">GYM<span>101%</span></div>
+        <div class="nav-links">
+            <a href="dashboard.html" data-i18n="nav_painel">Painel</a>
+            <a href="progresso.html" data-i18n="nav_progresso">Progresso</a>
+            <a href="alimentacao.html" data-i18n="nav_alimentacao">Alimentação</a>
+            <a href="amigos.html" data-i18n="nav_amigos">Amigos</a>
+            <a href="desafios.html" class="ativo" data-i18n="nav_desafios">Desafios</a>
+        </div>
+        <div class="utilizador-atual">
+            <div id="seletorIdiomaDestino"></div>
+            <div class="avatar-circulo" id="inicialAvatar">?</div>
+            <span id="nomeUtilizadorNav">...</span>
+            <a href="#" class="botao botao-secundario botao-pequeno" data-i18n="nav_sair" onclick="terminarSessao(); return false;">Sair</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="cabecalho-pagina" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h1 data-i18n="des_titulo">Desafios</h1>
+            <p data-i18n="des_subtitulo">Cria uma competição e convida os teus amigos. Quem chega primeiro à meta?</p>
+        </div>
+        <button class="botao botao-principal" data-i18n="des_novo" onclick="abrirFormularioNovoDesafio()">+ Novo desafio</button>
+    </div>
+
+    <div class="cartao" id="cartaoNovoDesafio" style="display:none; margin-bottom: 24px;">
+        <h3 style="margin-bottom: 16px;" data-i18n="des_criar_titulo">Criar desafio</h3>
+        <div class="mensagem-erro" id="caixaErro"></div>
+        <form id="formularioDesafio">
+            <div class="grelha grelha-2">
+                <div class="campo">
+                    <label data-i18n="des_nome">Nome do desafio</label>
+                    <input type="text" id="nomeDesafio" required data-i18n-placeholder="des_nome_placeholder" placeholder="Ex: Quem treina mais em outubro">
+                </div>
+                <div class="campo">
+                    <label data-i18n="des_tipo">Tipo de competição</label>
+                    <select id="tipoDesafio">
+                        <option value="treinos" data-i18n="des_tipo_treinos">Nº de treinos</option>
+                        <option value="calorias" data-i18n="des_tipo_calorias">Calorias queimadas</option>
+                        <option value="peso_perdido" data-i18n="des_tipo_peso">Peso perdido</option>
+                    </select>
+                </div>
+                <div class="campo">
+                    <label data-i18n="des_data_inicio">Data de início</label>
+                    <input type="date" id="dataInicioDesafio" required>
+                </div>
+                <div class="campo">
+                    <label data-i18n="des_data_fim">Data de fim</label>
+                    <input type="date" id="dataFimDesafio" required>
+                </div>
+            </div>
+            <div class="campo">
+                <label data-i18n="des_descricao">Descrição (opcional)</label>
+                <input type="text" id="descricaoDesafio" data-i18n-placeholder="des_descricao_placeholder" placeholder="Regras, prémio para o vencedor...">
+            </div>
+            <div class="campo">
+                <label data-i18n="des_convidar">Convidar amigos</label>
+                <div id="listaConvidados" class="lista-simples" style="background:var(--preto-suave); border-radius:3px; padding: 6px 14px; max-height:160px; overflow-y:auto;"></div>
+            </div>
+            <button type="submit" class="botao botao-principal" data-i18n="des_criar_botao">Criar desafio</button>
+        </form>
+    </div>
+
+    <div class="grelha grelha-2" id="grelhaDesafios">
+        <p class="vazio" data-i18n="des_a_carregar">A carregar desafios…</p>
+    </div>
+</div>
+
+<div class="rodape">Gym101% — feito por quem não falta a um treino.</div>
+
+<script src="../js/traducoes.js"></script>
+<script src="../js/i18n.js"></script>
+<script src="../js/comum.js"></script>
+<script>
+function rotuloTipoDesafio(tipo) {
+    return t("des_tipo_" + (tipo === "peso_perdido" ? "peso" : tipo));
+}
+
+function abrirFormularioNovoDesafio() {
+    document.getElementById("cartaoNovoDesafio").style.display = "block";
+    document.getElementById("cartaoNovoDesafio").scrollIntoView({ behavior: "smooth" });
+}
+
+async function carregarAmigosParaConvite() {
+    const amigos = await chamarApi("/api/amigos.php");
+    const lista = document.getElementById("listaConvidados");
+    if (amigos.length === 0) {
+        lista.innerHTML = `<p style="color:var(--cinza); padding: 10px 0;">${t("des_sem_amigos")}</p>`;
+        return;
+    }
+    lista.innerHTML = amigos.map(a => `
+        <li style="border-bottom:1px solid var(--linha);">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; width:100%; padding: 4px 0;">
+                <input type="checkbox" value="${a.id}" class="checkboxConvidado">
+                ${a.nome}
+            </label>
+        </li>
+    `).join("");
+}
+
+async function carregarDesafios() {
+    const desafios = await chamarApi("/api/desafios.php");
+    const grelha = document.getElementById("grelhaDesafios");
+    grelha.innerHTML = "";
+
+    if (desafios.length === 0) {
+        grelha.innerHTML = `<p class="vazio">${t("des_sem_desafios")}</p>`;
+        return;
+    }
+
+    for (const d of desafios) {
+        const classificacao = await chamarApi(`/api/desafios.php?acao=classificacao&desafio_id=${d.id}`);
+        const hoje = new Date().toISOString().slice(0, 10);
+        const estado = hoje < d.data_inicio ? t("des_nao_comecou") : (hoje > d.data_fim ? t("des_terminado") : t("des_a_decorrer"));
+
+        const linhasClassificacao = classificacao.map((c, i) => `
+            <li>
+                <span>${i + 1}º — ${c.nome}</span>
+                <span class="pilula">${c.pontos} ${t("des_pts")}</span>
+            </li>
+        `).join("");
+
+        const bloco = document.createElement("div");
+        bloco.className = "cartao";
+        bloco.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <h3>${d.nome}</h3>
+                <span class="pilula">${estado}</span>
+            </div>
+            <p style="color: var(--cinza); font-size: 0.85rem; margin: 8px 0 4px;">${rotuloTipoDesafio(d.tipo)} · ${formatarData(d.data_inicio)} a ${formatarData(d.data_fim)}</p>
+            ${d.descricao ? `<p style="font-size:0.88rem; margin-bottom: 14px;">${d.descricao}</p>` : ''}
+            <ul class="lista-simples" style="margin-top: 10px;">${linhasClassificacao || `<li class="vazio" style="width:100%;">${t("des_sem_pontos")}</li>`}</ul>
+        `;
+        grelha.appendChild(bloco);
+    }
+}
+
+document.addEventListener("idiomaMudou", () => { carregarAmigosParaConvite(); carregarDesafios(); });
+
+document.getElementById("formularioDesafio").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const caixaErro = document.getElementById("caixaErro");
+    const convidados = [...document.querySelectorAll(".checkboxConvidado:checked")].map(c => Number(c.value));
+
+    try {
+        await chamarApi("/api/desafios.php?acao=criar", {
+            method: "POST",
+            body: JSON.stringify({
+                nome: document.getElementById("nomeDesafio").value,
+                tipo: document.getElementById("tipoDesafio").value,
+                data_inicio: document.getElementById("dataInicioDesafio").value,
+                data_fim: document.getElementById("dataFimDesafio").value,
+                descricao: document.getElementById("descricaoDesafio").value,
+                convidados
+            })
+        });
+        document.getElementById("cartaoNovoDesafio").style.display = "none";
+        e.target.reset();
+        carregarDesafios();
+    } catch (erro) {
+        mostrarErro(caixaErro, erro.message);
+    }
+});
+
+(async () => {
+    const info = await protegerPagina();
+    if (!info) return;
+    document.getElementById("dataInicioDesafio").valueAsDate = new Date();
+    carregarAmigosParaConvite();
+    carregarDesafios();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gym101% — Entrar</title>
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+
+<div class="pagina-auth">
+    <div class="auth-lado-visual">
+        <div id="seletorIdiomaDestino" style="position:absolute; top:24px; right:24px;"></div>
+        <div>
+            <h1><span data-i18n="login_hero_titulo_1">Treina. Regista.</span><br><span data-i18n="login_hero_titulo_2">Compete com os</span> <span style="color:var(--amarelo);" data-i18n="login_hero_titulo_3">teus.</span></h1>
+            <p data-i18n="login_hero_texto">O Gym101% junta o teu treino, a tua alimentação e os teus amigos num único sítio. Sem desculpas, só resultados.</p>
+        </div>
+    </div>
+
+    <div class="auth-lado-form">
+        <h2 style="margin-bottom: 6px;" data-i18n="login_titulo">Entrar na conta</h2>
+        <p style="color: var(--cinza); margin-bottom: 28px;"><span data-i18n="login_sem_conta">Ainda não tens conta?</span> <a href="registo.html" data-i18n="login_criar_aqui">Cria uma aqui</a></p>
+
+        <div class="mensagem-erro" id="caixaErro"></div>
+
+        <form id="formularioLogin">
+            <div class="campo">
+                <label for="email" data-i18n="login_email">Email</label>
+                <input type="email" id="email" required autocomplete="email">
+            </div>
+            <div class="campo">
+                <label for="password" data-i18n="login_password">Palavra-passe</label>
+                <input type="password" id="password" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="botao botao-principal" style="width:100%; margin-top: 8px;" data-i18n="login_botao">Entrar</button>
+        </form>
+    </div>
+</div>
+
+<script src="js/traducoes.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/comum.js"></script>
+<script>inserirSeletorIdioma(document.getElementById("seletorIdiomaDestino"));</script>
+<script>
+document.getElementById("formularioLogin").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const caixaErro = document.getElementById("caixaErro");
+    try {
+        await chamarApi("/auth/login.php", {
+            method: "POST",
+            body: JSON.stringify({
+                email: document.getElementById("email").value,
+                password: document.getElementById("password").value
+            })
+        });
+        window.location.href = "paginas/dashboard.html";
+    } catch (erro) {
+        mostrarErro(caixaErro, erro.message);
+    }
+});
+</script>
+</body>
+</html>
