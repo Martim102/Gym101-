@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gym101% — Painel</title>
+<link rel="stylesheet" href="../css/estilo.css">
+</head>
+<body>
+
+<nav class="barra-nav">
+    <div class="container">
+        <div class="marca">GYM<span>101%</span></div>
+        <div class="nav-links">
+            <a href="dashboard.html" class="ativo" data-i18n="nav_painel">Painel</a>
+            <a href="progresso.html" data-i18n="nav_progresso">Progresso</a>
+            <a href="alimentacao.html" data-i18n="nav_alimentacao">Alimentação</a>
+            <a href="amigos.html" data-i18n="nav_amigos">Amigos</a>
+            <a href="desafios.html" data-i18n="nav_desafios">Desafios</a>
+        </div>
+        <div class="utilizador-atual">
+            <div id="seletorIdiomaDestino"></div>
+            <div class="avatar-circulo" id="inicialAvatar">?</div>
+            <span id="nomeUtilizadorNav">...</span>
+            <a href="#" class="botao botao-secundario botao-pequeno" data-i18n="nav_sair" onclick="terminarSessao(); return false;">Sair</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="cabecalho-pagina">
+        <h1 data-i18n="dash_titulo">Bem-vindo de volta.</h1>
+        <p data-i18n="dash_subtitulo">Aqui está o resumo da tua semana.</p>
+    </div>
+
+    <div class="grelha grelha-3" style="margin-bottom: 24px;">
+        <div class="cartao estatistica cartao-destaque">
+            <div class="numero" id="statTreinos">0</div>
+            <div class="rotulo" data-i18n="dash_stat_treinos">Treinos este mês</div>
+        </div>
+        <div class="cartao estatistica cartao-destaque">
+            <div class="numero" id="statPeso">—</div>
+            <div class="rotulo" data-i18n="dash_stat_peso">Peso atual (kg)</div>
+        </div>
+        <div class="cartao estatistica cartao-destaque">
+            <div class="numero" id="statAmigos">0</div>
+            <div class="rotulo" data-i18n="dash_stat_amigos">Amigos a competir</div>
+        </div>
+    </div>
+
+    <div class="grelha grelha-2">
+        <div class="cartao">
+            <h3 style="margin-bottom: 14px;" data-i18n="dash_ultimos_treinos">Últimos treinos</h3>
+            <ul class="lista-simples" id="listaTreinosRecentes">
+                <li class="vazio" style="width:100%;" data-i18n="dash_a_carregar">A carregar…</li>
+            </ul>
+            <form id="formularioTreinoRapido" style="margin-top: 18px; display: flex; gap: 8px;">
+                <input type="text" id="nomeTreinoRapido" data-i18n-placeholder="dash_treino_placeholder" placeholder="Ex: Peito e tríceps" required
+                       style="flex:1; background:var(--preto-suave); border:1px solid var(--linha); color:var(--branco); padding:10px 12px; border-radius:3px;">
+                <button type="submit" class="botao botao-principal botao-pequeno" data-i18n="dash_registar_treino">Registar treino de hoje</button>
+            </form>
+        </div>
+
+        <div class="cartao">
+            <h3 style="margin-bottom: 14px;" data-i18n="dash_desafios_ativos">Desafios ativos</h3>
+            <ul class="lista-simples" id="listaDesafiosResumo">
+                <li class="vazio" style="width:100%;" data-i18n="dash_a_carregar">A carregar…</li>
+            </ul>
+            <a href="desafios.html" class="botao botao-secundario botao-pequeno" style="margin-top: 16px; display:inline-block;" data-i18n="dash_ver_desafios">Ver todos os desafios</a>
+        </div>
+    </div>
+</div>
+
+<div class="rodape">Gym101% — feito por quem não falta a um treino.</div>
+
+<script src="../js/traducoes.js"></script>
+<script src="../js/i18n.js"></script>
+<script src="../js/comum.js"></script>
+<script>
+async function carregarDashboard() {
+    // Treinos
+    const treinos = await chamarApi("/api/treinos.php");
+    const esteMes = new Date().toISOString().slice(0, 7);
+    document.getElementById("statTreinos").textContent =
+        treinos.filter(t => t.data_treino.startsWith(esteMes)).length;
+
+    const listaTreinos = document.getElementById("listaTreinosRecentes");
+    listaTreinos.innerHTML = "";
+    if (treinos.length === 0) {
+        listaTreinos.innerHTML = `<li class="vazio" style="width:100%;">${t("dash_sem_treinos")}</li>`;
+    } else {
+        treinos.slice(0, 5).forEach(tr => {
+            listaTreinos.innerHTML += `<li><span>${tr.nome}</span><span class="pilula">${formatarData(tr.data_treino)}</span></li>`;
+        });
+    }
+
+    // Peso mais recente
+    const progresso = await chamarApi("/api/progresso.php");
+    if (progresso.length > 0) {
+        document.getElementById("statPeso").textContent = progresso[progresso.length - 1].peso;
+    }
+
+    // Amigos
+    const amigos = await chamarApi("/api/amigos.php");
+    document.getElementById("statAmigos").textContent = amigos.length;
+
+    // Desafios
+    const desafios = await chamarApi("/api/desafios.php");
+    const hoje = new Date().toISOString().slice(0, 10);
+    const ativos = desafios.filter(d => d.data_inicio <= hoje && d.data_fim >= hoje);
+    const listaDesafios = document.getElementById("listaDesafiosResumo");
+    listaDesafios.innerHTML = "";
+    if (ativos.length === 0) {
+        listaDesafios.innerHTML = `<li class="vazio" style="width:100%;">${t("dash_sem_desafios")}</li>`;
+    } else {
+        ativos.forEach(d => {
+            listaDesafios.innerHTML += `<li><span>${d.nome}</span><span class="pilula">${t("dash_ate")} ${formatarData(d.data_fim)}</span></li>`;
+        });
+    }
+}
+
+(async () => {
+    const info = await protegerPagina();
+    if (!info) return;
+    carregarDashboard();
+})();
+
+document.addEventListener("idiomaMudou", carregarDashboard);
+
+document.getElementById("formularioTreinoRapido").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nome = document.getElementById("nomeTreinoRapido").value;
+    await chamarApi("/api/treinos.php", {
+        method: "POST",
+        body: JSON.stringify({ nome, data_treino: new Date().toISOString().slice(0, 10) })
+    });
+    window.location.reload();
+});
+</script>
+</body>
+</html>

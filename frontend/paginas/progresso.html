@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gym101% — Progresso</title>
+<link rel="stylesheet" href="../css/estilo.css">
+</head>
+<body>
+
+<nav class="barra-nav">
+    <div class="container">
+        <div class="marca">GYM<span>101%</span></div>
+        <div class="nav-links">
+            <a href="dashboard.html" data-i18n="nav_painel">Painel</a>
+            <a href="progresso.html" class="ativo" data-i18n="nav_progresso">Progresso</a>
+            <a href="alimentacao.html" data-i18n="nav_alimentacao">Alimentação</a>
+            <a href="amigos.html" data-i18n="nav_amigos">Amigos</a>
+            <a href="desafios.html" data-i18n="nav_desafios">Desafios</a>
+        </div>
+        <div class="utilizador-atual">
+            <div id="seletorIdiomaDestino"></div>
+            <div class="avatar-circulo" id="inicialAvatar">?</div>
+            <span id="nomeUtilizadorNav">...</span>
+            <a href="#" class="botao botao-secundario botao-pequeno" data-i18n="nav_sair" onclick="terminarSessao(); return false;">Sair</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="cabecalho-pagina">
+        <h1 data-i18n="prog_titulo">O teu progresso</h1>
+        <p data-i18n="prog_subtitulo">Cada registo conta uma parte da história.</p>
+    </div>
+
+    <div class="grelha grelha-2">
+        <div class="cartao">
+            <h3 style="margin-bottom: 16px;" data-i18n="prog_novo_registo">Novo registo</h3>
+            <div class="mensagem-erro" id="caixaErro"></div>
+            <form id="formularioProgresso">
+                <div class="campo">
+                    <label for="data" data-i18n="prog_data">Data</label>
+                    <input type="date" id="data" required>
+                </div>
+                <div class="campo">
+                    <label for="peso" data-i18n="prog_peso">Peso (kg)</label>
+                    <input type="number" step="0.1" id="peso" required>
+                </div>
+                <div class="grelha grelha-2">
+                    <div class="campo">
+                        <label for="gordura" data-i18n="prog_gordura">Massa gorda (%)</label>
+                        <input type="number" step="0.1" id="gordura">
+                    </div>
+                    <div class="campo">
+                        <label for="musculo" data-i18n="prog_musculo">Massa muscular (%)</label>
+                        <input type="number" step="0.1" id="musculo">
+                    </div>
+                </div>
+                <div class="campo">
+                    <label for="notas" data-i18n="prog_notas">Notas</label>
+                    <input type="text" id="notas" data-i18n-placeholder="prog_notas_placeholder" placeholder="Como te sentiste, o que mudaste...">
+                </div>
+                <button type="submit" class="botao botao-principal" style="width:100%;" data-i18n="prog_guardar">Guardar registo</button>
+            </form>
+        </div>
+
+        <div class="cartao">
+            <h3 style="margin-bottom: 4px;" data-i18n="prog_evolucao">Evolução do peso</h3>
+            <p style="color: var(--cinza); font-size: 0.85rem; margin-bottom: 16px;" data-i18n="prog_evolucao_sub">Últimos registos, do mais antigo ao mais recente.</p>
+            <svg id="graficoPeso" viewBox="0 0 400 220" style="width:100%; height:220px;"></svg>
+        </div>
+    </div>
+
+    <div class="cartao" style="margin-top: 20px;">
+        <h3 style="margin-bottom: 14px;" data-i18n="prog_historico">Histórico</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th data-i18n="prog_th_data">Data</th>
+                    <th data-i18n="prog_th_peso">Peso</th>
+                    <th data-i18n="prog_th_gordura">Massa gorda</th>
+                    <th data-i18n="prog_th_musculo">Massa muscular</th>
+                    <th data-i18n="prog_th_notas">Notas</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="corpoTabelaProgresso"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="rodape">Gym101% — feito por quem não falta a um treino.</div>
+
+<script src="../js/traducoes.js"></script>
+<script src="../js/i18n.js"></script>
+<script src="../js/comum.js"></script>
+<script>
+document.getElementById("data").valueAsDate = new Date();
+let registosAtuais = [];
+
+async function carregarProgresso() {
+    registosAtuais = await chamarApi("/api/progresso.php");
+
+    const corpo = document.getElementById("corpoTabelaProgresso");
+    corpo.innerHTML = "";
+    if (registosAtuais.length === 0) {
+        corpo.innerHTML = `<tr><td colspan="6" class="vazio">${t("prog_sem_registos")}</td></tr>`;
+    } else {
+        [...registosAtuais].reverse().forEach(r => {
+            corpo.innerHTML += `<tr>
+                <td>${formatarData(r.data_registo)}</td>
+                <td>${r.peso} kg</td>
+                <td>${r.gordura_corporal ?? '—'}</td>
+                <td>${r.musculo ?? '—'}</td>
+                <td>${r.notas ?? '—'}</td>
+                <td><a href="#" onclick="apagarRegisto(${r.id}); return false;" style="color:var(--vermelho);">${t("prog_remover")}</a></td>
+            </tr>`;
+        });
+    }
+
+    desenharGrafico(registosAtuais);
+}
+
+function desenharGrafico(registos) {
+    const svg = document.getElementById("graficoPeso");
+    svg.innerHTML = "";
+    if (registos.length < 2) {
+        svg.innerHTML = `<text x="200" y="110" fill="#9a9a94" font-size="13" text-anchor="middle">${t("prog_grafico_vazio")}</text>`;
+        return;
+    }
+
+    const pesos = registos.map(r => parseFloat(r.peso));
+    const min = Math.min(...pesos) - 1;
+    const max = Math.max(...pesos) + 1;
+    const largura = 400, altura = 220, margemTopo = 36, margemBaixo = 20, margemLado = 20;
+
+    const coords = registos.map((r, i) => {
+        const x = margemLado + (i / (registos.length - 1)) * (largura - margemLado * 2);
+        const y = altura - margemBaixo - ((parseFloat(r.peso) - min) / (max - min)) * (altura - margemTopo - margemBaixo);
+        return { x, y, peso: parseFloat(r.peso) };
+    });
+
+    const linha = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    linha.setAttribute("points", coords.map(c => `${c.x},${c.y}`).join(" "));
+    linha.setAttribute("fill", "none");
+    linha.setAttribute("stroke", "#f4c500");
+    linha.setAttribute("stroke-width", "3");
+    svg.appendChild(linha);
+
+    coords.forEach(c => {
+        // número do peso, por cima do ponto
+        const texto = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        texto.setAttribute("x", c.x);
+        texto.setAttribute("y", c.y - 12);
+        texto.setAttribute("fill", "#f5f5f2");
+        texto.setAttribute("font-size", "12");
+        texto.setAttribute("font-weight", "600");
+        texto.setAttribute("text-anchor", "middle");
+        texto.textContent = c.peso.toFixed(1);
+        svg.appendChild(texto);
+
+        const circulo = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circulo.setAttribute("cx", c.x);
+        circulo.setAttribute("cy", c.y);
+        circulo.setAttribute("r", "4");
+        circulo.setAttribute("fill", "#0c0c0c");
+        circulo.setAttribute("stroke", "#f4c500");
+        circulo.setAttribute("stroke-width", "2");
+        svg.appendChild(circulo);
+    });
+}
+
+async function apagarRegisto(id) {
+    await chamarApi("/api/progresso.php", { method: "DELETE", body: JSON.stringify({ id }) });
+    carregarProgresso();
+}
+
+document.addEventListener("idiomaMudou", carregarProgresso);
+
+document.getElementById("formularioProgresso").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const caixaErro = document.getElementById("caixaErro");
+    try {
+        await chamarApi("/api/progresso.php", {
+            method: "POST",
+            body: JSON.stringify({
+                data_registo: document.getElementById("data").value,
+                peso: document.getElementById("peso").value,
+                gordura_corporal: document.getElementById("gordura").value || null,
+                musculo: document.getElementById("musculo").value || null,
+                notas: document.getElementById("notas").value || null
+            })
+        });
+        e.target.reset();
+        document.getElementById("data").valueAsDate = new Date();
+        carregarProgresso();
+    } catch (erro) {
+        mostrarErro(caixaErro, erro.message);
+    }
+});
+
+(async () => {
+    const info = await protegerPagina();
+    if (!info) return;
+    carregarProgresso();
+})();
+</script>
+</body>
+</html>

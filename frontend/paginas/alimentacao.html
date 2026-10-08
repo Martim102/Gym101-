@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gym101% — Alimentação</title>
+<link rel="stylesheet" href="../css/estilo.css">
+</head>
+<body>
+
+<nav class="barra-nav">
+    <div class="container">
+        <div class="marca">GYM<span>101%</span></div>
+        <div class="nav-links">
+            <a href="dashboard.html" data-i18n="nav_painel">Painel</a>
+            <a href="progresso.html" data-i18n="nav_progresso">Progresso</a>
+            <a href="alimentacao.html" class="ativo" data-i18n="nav_alimentacao">Alimentação</a>
+            <a href="amigos.html" data-i18n="nav_amigos">Amigos</a>
+            <a href="desafios.html" data-i18n="nav_desafios">Desafios</a>
+        </div>
+        <div class="utilizador-atual">
+            <div id="seletorIdiomaDestino"></div>
+            <div class="avatar-circulo" id="inicialAvatar">?</div>
+            <span id="nomeUtilizadorNav">...</span>
+            <a href="#" class="botao botao-secundario botao-pequeno" data-i18n="nav_sair" onclick="terminarSessao(); return false;">Sair</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="cabecalho-pagina" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h1 data-i18n="alim_titulo">Alimentação</h1>
+            <p><span data-i18n="alim_subtitulo">O que comeste hoje,</span> <span id="dataEscolhidaTexto"></span>.</p>
+        </div>
+        <input type="date" id="seletorData" style="background:var(--cartao); border:1px solid var(--linha); color:var(--branco); padding:10px 14px; border-radius:3px;">
+    </div>
+
+    <div class="grelha grelha-2" style="margin-bottom: 24px;">
+        <div class="cartao">
+            <h3 style="margin-bottom: 16px;" data-i18n="alim_resumo">Resumo do dia</h3>
+            <div style="margin-bottom: 14px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.88rem; margin-bottom:4px;">
+                    <span data-i18n="alim_calorias">Calorias</span><span id="textoCaloriasResumo">0 / 2000 kcal</span>
+                </div>
+                <div class="barra-progresso-fundo"><div class="barra-progresso-cheia" id="barraCalorias" style="width:0%;"></div></div>
+            </div>
+            <div class="grelha grelha-3">
+                <div class="estatistica"><div class="numero" id="statProteina" style="font-size:1.6rem;">0g</div><div class="rotulo" data-i18n="alim_proteina">Proteína</div></div>
+                <div class="estatistica"><div class="numero" id="statHidratos" style="font-size:1.6rem;">0g</div><div class="rotulo" data-i18n="alim_hidratos">Hidratos</div></div>
+                <div class="estatistica"><div class="numero" id="statGordura" style="font-size:1.6rem;">0g</div><div class="rotulo" data-i18n="alim_gordura">Gordura</div></div>
+            </div>
+        </div>
+
+        <div class="cartao">
+            <h3 style="margin-bottom: 16px;" data-i18n="alim_metas_titulo">Definir as tuas metas diárias</h3>
+            <form id="formularioMetas" class="grelha grelha-2">
+                <div class="campo"><label data-i18n="alim_meta_calorias">Calorias</label><input type="number" id="metaCalorias"></div>
+                <div class="campo"><label data-i18n="alim_meta_proteina">Proteína (g)</label><input type="number" id="metaProteina"></div>
+                <div class="campo"><label data-i18n="alim_meta_hidratos">Hidratos (g)</label><input type="number" id="metaHidratos"></div>
+                <div class="campo"><label data-i18n="alim_meta_gordura">Gordura (g)</label><input type="number" id="metaGordura"></div>
+                <button type="submit" class="botao botao-secundario" style="grid-column: 1 / -1;" data-i18n="alim_atualizar_metas">Atualizar metas</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="cartao">
+        <h3 style="margin-bottom: 16px;" data-i18n="alim_adicionar_refeicao">Adicionar refeição</h3>
+        <div class="mensagem-erro" id="caixaErro"></div>
+        <form id="formularioRefeicao" class="grelha" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr auto; align-items:end; gap: 10px;">
+            <div class="campo" style="margin-bottom:0;"><label data-i18n="alim_nome">Nome</label><input type="text" id="nomeRefeicao" required data-i18n-placeholder="alim_nome_placeholder" placeholder="Ex: Peito de frango com arroz"></div>
+            <div class="campo" style="margin-bottom:0;">
+                <label data-i18n="alim_tipo">Tipo</label>
+                <select id="tipoRefeicao">
+                    <option value="pequeno_almoco" data-i18n="alim_tipo_pequeno_almoco">Pequeno-almoço</option>
+                    <option value="almoco" data-i18n="alim_tipo_almoco">Almoço</option>
+                    <option value="lanche" data-i18n="alim_tipo_lanche">Lanche</option>
+                    <option value="jantar" data-i18n="alim_tipo_jantar">Jantar</option>
+                    <option value="ceia" data-i18n="alim_tipo_ceia">Ceia</option>
+                </select>
+            </div>
+            <div class="campo" style="margin-bottom:0;"><label data-i18n="alim_kcal">Kcal</label><input type="number" id="caloriasRefeicao" required></div>
+            <div class="campo" style="margin-bottom:0;"><label data-i18n="alim_prot_g">Prot. (g)</label><input type="number" id="proteinaRefeicao"></div>
+            <div class="campo" style="margin-bottom:0;"><label data-i18n="alim_hid_g">Hid. (g)</label><input type="number" id="hidratosRefeicao"></div>
+            <div class="campo" style="margin-bottom:0;"><label data-i18n="alim_gord_g">Gord. (g)</label><input type="number" id="gorduraRefeicao"></div>
+            <button type="submit" class="botao botao-principal" data-i18n="alim_adicionar">Adicionar</button>
+        </form>
+    </div>
+
+    <div class="cartao" style="margin-top: 20px;">
+        <h3 style="margin-bottom: 14px;" data-i18n="alim_refeicoes_registadas">Refeições registadas</h3>
+        <ul class="lista-simples" id="listaRefeicoes">
+            <li class="vazio" style="width:100%;" data-i18n="dash_a_carregar">A carregar…</li>
+        </ul>
+    </div>
+</div>
+
+<div class="rodape">Gym101% — feito por quem não falta a um treino.</div>
+
+<script src="../js/traducoes.js"></script>
+<script src="../js/i18n.js"></script>
+<script src="../js/comum.js"></script>
+<script>
+function rotuloTipo(tipo) {
+    return t("alim_tipo_" + tipo);
+}
+
+const seletorData = document.getElementById("seletorData");
+seletorData.valueAsDate = new Date();
+
+async function carregarMetas() {
+    const metas = await chamarApi("/api/alimentacao.php?acao=metas");
+    document.getElementById("metaCalorias").value = metas.calorias_meta;
+    document.getElementById("metaProteina").value = metas.proteina_meta;
+    document.getElementById("metaHidratos").value = metas.hidratos_meta;
+    document.getElementById("metaGordura").value = metas.gordura_meta;
+    return metas;
+}
+
+async function carregarRefeicoes() {
+    const data = seletorData.value;
+    document.getElementById("dataEscolhidaTexto").textContent = formatarData(data);
+
+    const refeicoes = await chamarApi(`/api/alimentacao.php?data=${data}`);
+    const lista = document.getElementById("listaRefeicoes");
+    lista.innerHTML = "";
+
+    let totalCal = 0, totalProt = 0, totalHid = 0, totalGord = 0;
+
+    if (refeicoes.length === 0) {
+        lista.innerHTML = `<li class="vazio" style="width:100%;">${t("alim_sem_refeicoes")}</li>`;
+    } else {
+        refeicoes.forEach(r => {
+            totalCal += Number(r.calorias);
+            totalProt += Number(r.proteina_g);
+            totalHid += Number(r.hidratos_g);
+            totalGord += Number(r.gordura_g);
+            lista.innerHTML += `<li>
+                <span><span class="pilula" style="margin-right:10px;">${rotuloTipo(r.tipo)}</span>${r.nome}</span>
+                <span>${r.calorias} kcal &nbsp; <a href="#" onclick="apagarRefeicao(${r.id}); return false;" style="color:var(--vermelho);">${t("alim_remover")}</a></span>
+            </li>`;
+        });
+    }
+
+    const metas = await carregarMetas();
+    document.getElementById("textoCaloriasResumo").textContent = `${totalCal} / ${metas.calorias_meta} kcal`;
+    document.getElementById("barraCalorias").style.width = Math.min(100, (totalCal / metas.calorias_meta) * 100) + "%";
+    document.getElementById("statProteina").textContent = totalProt + "g";
+    document.getElementById("statHidratos").textContent = totalHid + "g";
+    document.getElementById("statGordura").textContent = totalGord + "g";
+}
+
+async function apagarRefeicao(id) {
+    await chamarApi("/api/alimentacao.php", { method: "DELETE", body: JSON.stringify({ id }) });
+    carregarRefeicoes();
+}
+
+seletorData.addEventListener("change", carregarRefeicoes);
+
+document.getElementById("formularioRefeicao").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const caixaErro = document.getElementById("caixaErro");
+    try {
+        await chamarApi("/api/alimentacao.php", {
+            method: "POST",
+            body: JSON.stringify({
+                nome: document.getElementById("nomeRefeicao").value,
+                tipo: document.getElementById("tipoRefeicao").value,
+                data_refeicao: seletorData.value,
+                calorias: document.getElementById("caloriasRefeicao").value,
+                proteina_g: document.getElementById("proteinaRefeicao").value || 0,
+                hidratos_g: document.getElementById("hidratosRefeicao").value || 0,
+                gordura_g: document.getElementById("gorduraRefeicao").value || 0
+            })
+        });
+        e.target.reset();
+        carregarRefeicoes();
+    } catch (erro) {
+        mostrarErro(caixaErro, erro.message);
+    }
+});
+
+document.getElementById("formularioMetas").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await chamarApi("/api/alimentacao.php?acao=metas", {
+        method: "POST",
+        body: JSON.stringify({
+            calorias_meta: document.getElementById("metaCalorias").value,
+            proteina_meta: document.getElementById("metaProteina").value,
+            hidratos_meta: document.getElementById("metaHidratos").value,
+            gordura_meta: document.getElementById("metaGordura").value
+        })
+    });
+    carregarRefeicoes();
+});
+
+(async () => {
+    const info = await protegerPagina();
+    if (!info) return;
+    carregarRefeicoes();
+})();
+
+document.addEventListener("idiomaMudou", carregarRefeicoes);
+</script>
+</body>
+</html>
